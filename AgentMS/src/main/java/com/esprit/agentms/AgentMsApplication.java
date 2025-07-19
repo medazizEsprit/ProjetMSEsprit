@@ -22,10 +22,14 @@ public class AgentMsApplication {
         @Bean
         CommandLineRunner runner(AgentRepository agentRepository) {
         return args -> {
-//            Agent agent = new Agent("MohamedAziz","BenTourkia","AzizVoyages","c@a.com","50645211");
-//            agentRepository.insert(agent);
-            System.out.println(agentRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("aziz","ben"));
-            System.out.println(agentRepository.findByEmailIgnoreCase("c@a.com"));
+            Agent agent = new Agent("MohamedAziz","BenTourkia","AzizVoyages","a@a.com","50645211");
+            Agent agent2 = new Agent("MohamedAziz","BenTourkia","AzizVoyages","b@a.com","50645211");
+            Agent agent3 = new Agent("MohamedAziz","BenTourkia","AzizVoyages","c@a.com","50645211");
+            agentRepository.insert(agent);
+            agentRepository.insert(agent2);
+            agentRepository.insert(agent3);
+//            System.out.println(agentRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("aziz","ben"));
+//            System.out.println(agentRepository.findByEmailIgnoreCase("c@a.com"));
         };
 
     }

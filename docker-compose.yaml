@@ -6,22 +6,25 @@ services:
     container_name: mongodb
     ports:
       - 27017:27017
-    volumes:
-      - data:/data/db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=rootuser
       - MONGO_INITDB_ROOT_PASSWORD=rootpass
+    volumes:
+      - data:/data/db
+    networks:
+      - my_network
 
   mongo-express:
     image: mongo-express
     container_name: mongo-express
-    restart: always
     ports:
       - 8081:8081
     environment:
       - ME_CONFIG_MONGODB_ADMINUSERNAME=rootuser
       - ME_CONFIG_MONGODB_ADMINPASSWORD=rootpass
       - ME_CONFIG_MONGODB_SERVER=mongodb
+    networks:
+      - my_network
 
   mysql:
     image: mysql:8.0
@@ -35,30 +38,140 @@ services:
       - MYSQL_ROOT_PASSWORD=pass
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - my_network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
-    restart: always
     ports:
       - 8083:80
     environment:
       - PMA_HOST=mysql
       - PMA_USER=admin
       - PMA_PASSWORD=pass
+    networks:
+      - my_network
+
   eureka:
+    build: ./eureka-server
     container_name: eureka
-    build: .\eureka-server
     ports:
-      - "8761:8761"
-    image: "eureka"
+      - 8761:8761
     environment:
       - eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+    networks:
+      - my_network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - my_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    hostname: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - my_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - 8080:8080
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    networks:
+      - my_network
+
+  api-gateway:
+    build: ./ApiGateway
+    container_name: api-gateway
+    ports:
+      - 8888:8888
+    environment:
+      - eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+      - eureka.client.register-with-eureka=true
+    depends_on:
+      - eureka
+    networks:
+      - my_network
+
+  agentms:
+    build: ./AgentMS
+    container_name: agentms
+    ports:
+      - 8085:8085
+    depends_on:
+      - eureka
+      - mongodb
+      - kafka
+    environment:
+      - SPRING_APPLICATION_NAME=AgentMS
+      - SERVER_PORT=8085
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+      - SPRING_DATA_MONGODB_USERNAME=rootuser
+      - SPRING_DATA_MONGODB_PASSWORD=rootpass
+      - SPRING_DATA_MONGODB_DATABASE=miniprojetmsmongo
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_AUTO_INDEX_CREATION=true
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - my_network
+  propertyms:
+    build: ./PropertyMS
+    container_name: propertyms
+    ports:
+      - 8086:8086
+    depends_on:
+      - eureka
+      - mysql
+      - kafka
+    environment:
+      - SPRING_APPLICATION_NAME=PropertyMS
+      - SERVER_PORT=8086
+      - SERVER_ADDRESS=0.0.0.0
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/miniprojetmsmysql
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - my_network
 
 volumes:
   data: {}
   mysql_data: {}
 
 networks:
-  default:
-    name: mongodb_network
+  my_network:
+    driver: bridge

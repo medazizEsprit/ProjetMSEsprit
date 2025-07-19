@@ -7,6 +7,8 @@
         <option value="$PROJECT_DIR$/AgentMS/pom.xml" />
         <option value="$PROJECT_DIR$/PropertyMS/pom.xml" />
         <option value="$PROJECT_DIR$/eureka-server/pom.xml" />
+        <option value="$PROJECT_DIR$/ApiGateway/pom.xml" />
+        <option value="$PROJECT_DIR$/config-server/pom.xml" />
       </list>
     </option>
   </component>

@@ -3,7 +3,7 @@ package com.esprit.agentms.controllers;
 
 import com.esprit.agentms.clients.AgentClient;
 import com.esprit.agentms.dto.AgentDto;
-import com.esprit.propertyms.dto.PropertyDto;
+import com.esprit.agentms.dto.PropertyDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
