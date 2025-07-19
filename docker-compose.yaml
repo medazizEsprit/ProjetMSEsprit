@@ -1,6 +1,13 @@
 version: "3.8"
 
 services:
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - 8889:8889
+    networks:
+      - my_network
   mongodb:
     image: mongo
     container_name: mongodb
@@ -126,10 +133,14 @@ services:
     ports:
       - 8085:8085
     depends_on:
+      - config-server
       - eureka
       - mongodb
       - kafka
     environment:
+      - SPRING_APPLICATION_NAME=AgentMS
+#      - SERVER_PORT=8085
+#      - SERVER_ADDRESS=0.0.0.0
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8889
     networks:
