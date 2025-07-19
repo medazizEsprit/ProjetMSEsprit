@@ -130,17 +130,8 @@ services:
       - mongodb
       - kafka
     environment:
-      - SPRING_APPLICATION_NAME=AgentMS
-      - SERVER_PORT=8085
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
-      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
-      - SPRING_DATA_MONGODB_USERNAME=rootuser
-      - SPRING_DATA_MONGODB_PASSWORD=rootpass
-      - SPRING_DATA_MONGODB_DATABASE=miniprojetmsmongo
-      - SPRING_DATA_MONGODB_HOST=mongodb
-      - SPRING_DATA_MONGODB_PORT=27017
-      - SPRING_DATA_MONGODB_AUTO_INDEX_CREATION=true
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8889
     networks:
       - my_network
   propertyms:
